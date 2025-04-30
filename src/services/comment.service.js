@@ -9,8 +9,8 @@ const CommentService = {
 
   // Reply to a comment
   replyToComment: async (commentId, content, replyTo) => {
-    const response = await api.post('/comments/reply', { 
-      commentId, 
+    const response = await api.post('/comments/reply', {
+      commentId,
       content,
       replyTo
     });
@@ -19,7 +19,7 @@ const CommentService = {
 
   // Get all comments for a blog
   getBlogComments: async (blogId) => {
-    const response = await api.post('/comments', { blogId });
+    const response = await api.post('/comment', { blogId });
     return response.data;
   },
 

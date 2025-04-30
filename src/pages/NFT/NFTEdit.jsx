@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, message, Select, Spin, Upload, Card, Table, Tag, Space } from 'antd';
-import { UploadOutlined, ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+import { UploadOutlined, ArrowLeftOutlined, EditOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import NFTService from '../../services/nft.service.js';
 import api from '../../services/api.js';
@@ -10,9 +10,11 @@ const { Option } = Select;
 const NFTEdit = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [categories, setCategories] = useState([]);
   const [nft, setNft] = useState(null);
+  const [selectedEditions, setSelectedEditions] = useState([]);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -62,6 +64,7 @@ const NFTEdit = () => {
         price: values.price,
         author: values.author,
         category: values.category,
+        status: values.status,
       };
 
       // Update NFT
@@ -90,6 +93,35 @@ const NFTEdit = () => {
     }
   };
 
+  // Handle publishing selected editions to the market
+  const handlePublishToMarket = async () => {
+    if (selectedEditions.length === 0) {
+      return message.warning('请选择要发布的NFT版本');
+    }
+
+    setPublishLoading(true);
+    try {
+      // Use the publishNFT endpoint to publish selected editions
+      await NFTService.publishNFT(id, {
+        editionIds: selectedEditions
+      });
+      
+      message.success('NFT已成功发布到市场');
+      
+      // Refresh NFT data
+      const nftResponse = await NFTService.getNFT(id);
+      setNft(nftResponse.data);
+      
+      // Clear selection
+      setSelectedEditions([]);
+    } catch (error) {
+      console.error('Error publishing NFT:', error);
+      message.error('发布NFT失败: ' + (error.response?.data?.message || '未知错误'));
+    } finally {
+      setPublishLoading(false);
+    }
+  };
+
   // Configuration for image upload
   const uploadProps = {
     name: 'file',
@@ -108,6 +140,18 @@ const NFTEdit = () => {
         message.error(`${info.file.name} 上传失败`);
       }
     },
+  };
+
+  // Handle table selection change
+  const rowSelection = {
+    selectedRowKeys: selectedEditions,
+    onChange: (selectedRowKeys) => {
+      setSelectedEditions(selectedRowKeys);
+    },
+    getCheckboxProps: (record) => ({
+      // Disable editions that are not eligible for publishing (already for sale or sold)
+      disabled: record.status === 2 || record.status === 4 || record.status === 5,
+    }),
   };
 
   // Columns for editions table
@@ -131,6 +175,9 @@ const NFTEdit = () => {
           2: 'green',    // 寄售中
           3: 'orange',   // 锁定中
           4: 'red',      // 已售出
+          5: 'blue',     // 已发布
+          6: 'purple',   // 空投
+          7: 'cyan',     // 合成
         };
         return <Tag color={statusColors[record.status]}>{record.statusStr}</Tag>;
       },
@@ -147,7 +194,7 @@ const NFTEdit = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="small">
-          {record.status !== 2 && record.status !== 4 && (
+          {record.status !== 2 && record.status !== 4 && record.status !== 5 && (
             <Button 
               type="primary" 
               size="small" 
@@ -187,6 +234,7 @@ const NFTEdit = () => {
         </Button>
       </div>
 
+    
       <Card className="form-container" title="基本信息" style={{ marginBottom: 24 }}>
         <Form
           form={form}
@@ -259,7 +307,23 @@ const NFTEdit = () => {
           >
             <Input placeholder="输入作者名称" />
           </Form.Item>
-          
+          <Form.Item
+            name="status"
+            label="状态"
+            rules={[{ required: true, message: '请选择状态' }]}
+            initialValue={1}
+          >
+            <Select placeholder="选择NFT状态">
+              <Option value={1}>未发布</Option>
+              <Option value={2}>已发布</Option>
+              <Option value={3}>已售罄</Option>
+              <Option value={4}>已下架</Option>
+              <Option value={5}>限时发售</Option>
+              <Option value={6}>预售</Option>
+              <Option value={7}>热卖中</Option>
+              <Option value={7}>即将售罄</Option>
+            </Select>
+          </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>
               保存更改
@@ -267,15 +331,28 @@ const NFTEdit = () => {
           </Form.Item>
         </Form>
       </Card>
-
-      <Card title="NFT版本管理" className="card-container">
+      <Card title="NFT版本管理" className="card-container" 
+        extra={
+          <Button 
+            type="primary" 
+            icon={<ShoppingOutlined />} 
+            onClick={handlePublishToMarket}
+            loading={publishLoading}
+            disabled={selectedEditions.length === 0}
+          >
+            发布选中NFT到市场({selectedEditions.length})
+          </Button>
+        }
+      >
         <Table
+          rowSelection={rowSelection}
           columns={editionsColumns}
           dataSource={nft?.editions || []}
           rowKey="sub_id"
           pagination={false}
         />
       </Card>
+
     </div>
   );
 };

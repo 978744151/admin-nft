@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, message, Tag, Select, Card, InputNumber, Form, Checkbox } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, ShoppingOutlined, GiftOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Modal, message, Tag, Select, Card, Tooltip, InputNumber, Form } from 'antd';
+import { ShoppingOutlined, StopOutlined, ExclamationCircleOutlined, GiftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import NFTService from '../../services/nft.service.js';
 import api from '../../services/api.js';
@@ -8,7 +8,7 @@ import api from '../../services/api.js';
 const { confirm } = Modal;
 const { Option } = Select;
 
-const NFTList = () => {
+const NFTMarketplace = () => {
   const [loading, setLoading] = useState(false);
   const [nfts, setNfts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -16,12 +16,9 @@ const NFTList = () => {
   const [syntheticAirdropModal, setSyntheticAirdropModal] = useState(false);
   const [currentNftId, setCurrentNftId] = useState(null);
   const [airdropForm] = Form.useForm();
-  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-  const [batchPublishModal, setBatchPublishModal] = useState(false);
-  const [publishForm] = Form.useForm();
   const navigate = useNavigate();
 
-  // Fetch NFTs and categories
+  // Fetch published NFTs and categories
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -30,9 +27,9 @@ const NFTList = () => {
         const categoryResponse = await api.get('/nft-categories');
         setCategories(categoryResponse.data.data || []);
 
-        // Fetch NFTs with category filter if selected
-        const nftResponse = await NFTService.getNFTs(selectedCategory);
-        setNfts(nftResponse.data?.data || []);
+        // Fetch available NFTs for purchase
+        const nftResponse = await NFTService.getAvailableNFTs();
+        setNfts(nftResponse.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         message.error('获取NFT数据失败');
@@ -49,9 +46,10 @@ const NFTList = () => {
     setSelectedCategory(value);
   };
 
+  // Handle NFT publication for users to purchase
   const handlePublish = (id) => {
     confirm({
-      title: '确认发布',
+      title: '确认发布NFT',
       icon: <ShoppingOutlined />,
       content: '确定要将此NFT发布到市场供用户购买吗？',
       okText: '确认',
@@ -84,8 +82,8 @@ const NFTList = () => {
           message.success('NFT已成功发布到市场');
           
           // 刷新列表
-          const response = await NFTService.getNFTs(selectedCategory);
-          setNfts(response.data?.data || []);
+          const availableResponse = await NFTService.getAvailableNFTs();
+          setNfts(availableResponse.data || []);
         } catch (error) {
           message.error('发布失败: ' + (error.response?.data?.message || '未知错误'));
         }
@@ -93,24 +91,25 @@ const NFTList = () => {
     });
   };
 
-  // Handle NFT deletion
-  const handleDelete = (id) => {
+  // Handle removing NFT from marketplace
+  const handleRemoveFromMarket = (id, subId) => {
     confirm({
-      title: '确认删除',
-      icon: <ExclamationCircleOutlined />,
-      content: '确定要删除这个NFT吗？此操作无法撤销。',
+      title: '确认下架',
+      icon: <StopOutlined />,
+      content: '确定要将此NFT从市场下架吗？',
       okText: '确认',
       okType: 'danger',
       cancelText: '取消',
       onOk: async () => {
         try {
-          await NFTService.deleteNFT(id);
-          message.success('NFT删除成功');
-          // Refresh the list
-          const response = await NFTService.getNFTs(selectedCategory);
-          setNfts(response.data?.data || []);
+          await NFTService.updateNFTEdition(id, subId, { status: 1 }); // 改为未寄售状态
+          message.success('NFT已从市场下架');
+          
+          // 刷新列表
+          const availableResponse = await NFTService.getAvailableNFTs();
+          setNfts(availableResponse.data || []);
         } catch (error) {
-          message.error('删除失败: ' + (error.response?.data?.message || '未知错误'));
+          message.error('下架失败: ' + (error.response?.data?.message || '未知错误'));
         }
       },
     });
@@ -136,8 +135,8 @@ const NFTList = () => {
       airdropForm.resetFields();
       
       // 刷新列表
-      const response = await NFTService.getNFTs(selectedCategory);
-      setNfts(response.data?.data || []);
+      const availableResponse = await NFTService.getAvailableNFTs();
+      setNfts(availableResponse.data || []);
     } catch (error) {
       if (error.errorFields) {
         return; // 表单验证错误
@@ -146,36 +145,54 @@ const NFTList = () => {
     }
   };
 
-  // Handle batch publish
-  const handleBatchPublish = () => {
-    if (selectedRowKeys.length === 0) {
-      return message.warning('请先选择要发布的NFT');
-    }
-    
-    setBatchPublishModal(true);
-  };
-  
-  const submitBatchPublish = async () => {
-    try {
-      const values = await publishForm.validateFields();
-      
-      await NFTService.publishNFTBatch(selectedRowKeys, values.price);
-      
-      message.success('NFT批量发布成功');
-      setBatchPublishModal(false);
-      publishForm.resetFields();
-      setSelectedRowKeys([]);
-      
-      // 刷新列表
-      const response = await NFTService.getNFTs(selectedCategory);
-      setNfts(response.data?.data || []);
-    } catch (error) {
-      if (error.errorFields) {
-        return; // 表单验证错误
-      }
-      message.error('批量发布失败: ' + (error.response?.data?.message || '未知错误'));
-    }
-  };
+  // Columns for editions table
+  const editionsColumns = [
+    {
+      title: '编号',
+      dataIndex: 'sub_id',
+      key: 'sub_id',
+      width: '80px',
+    },
+    {
+      title: '价格',
+      dataIndex: 'price',
+      key: 'price',
+      width: '100px',
+    },
+    {
+      title: '状态',
+      key: 'status',
+      width: '100px',
+      render: (_, record) => (
+        <Tag color="green">{record.statusStr || '寄售中'}</Tag>
+      ),
+    },
+    {
+      title: '拥有者',
+      key: 'owner',
+      width: '120px',
+      render: (_, record) => (
+        <span>{record.owner?.name || '平台'}</span>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: '100px',
+      render: (_, record) => (
+        <Space size="small">
+          <Button 
+            danger 
+            size="small"
+            icon={<StopOutlined />}
+            onClick={() => handleRemoveFromMarket(record.nftId, record.sub_id)}
+          >
+            下架
+          </Button>
+        </Space>
+      ),
+    },
+  ];
 
   // Table columns definition
   const columns = [
@@ -205,7 +222,7 @@ const NFTList = () => {
       key: 'name',
     },
     {
-      title: '价格',
+      title: '基础价格',
       dataIndex: 'price',
       key: 'price',
     },
@@ -216,14 +233,9 @@ const NFTList = () => {
       render: (category) => <Tag color="blue">{category?.name || '未分类'}</Tag>,
     },
     {
-      title: '数量',
-      dataIndex: 'quantity',
-      key: 'quantity',
-    },
-    {
-      title: '已售',
-      dataIndex: 'soldQty',
-      key: 'soldQty',
+      title: '在售数量',
+      key: 'availableCount',
+      render: (_, record) => record.availableEditions?.length || 0,
     },
     {
       title: '作者',
@@ -231,84 +243,55 @@ const NFTList = () => {
       key: 'author',
     },
     {
-      title: '状态',
-      dataIndex: 'statusStr',
-      key: 'statusStr',
-    },
-    {
       title: '操作',
-      key: 'action',
-      width: '300px',
+      key: 'actions',
+      width: '120px',
       render: (_, record) => (
-        <Space size="small" className="table-actions">
-        <Button 
-          type="primary" 
-          icon={<EditOutlined />} 
-          size="small"
-          onClick={() => navigate(`/nfts/edit/${record._id}`)}
-        >
-          编辑
-        </Button>
-        <Button 
-          type="default"
-          style={{ background: '#52c41a', color: 'white' }}
-          icon={<ShoppingOutlined />} 
-          size="small"
-          onClick={() => handlePublish(record._id)}
-        >
-          发布
-        </Button>
-        <Button 
-          type="default"
-          style={{ background: '#722ed1', color: 'white' }}
-          icon={<GiftOutlined />} 
-          size="small"
-          onClick={() => handleSyntheticAirdrop(record._id)}
-        >
-          合成空投
-        </Button>
-        <Button 
-          danger 
-          icon={<DeleteOutlined />} 
-          size="small"
-          onClick={() => handleDelete(record._id)}
-        >
-          删除
-        </Button>
-      </Space>
-      ),
-    },
+        <Space size="small">
+          <Button
+            type="default"
+            style={{ background: '#722ed1', color: 'white' }}
+            icon={<GiftOutlined />}
+            size="small"
+            onClick={() => handleSyntheticAirdrop(record._id)}
+          >
+            合成空投
+          </Button>
+        </Space>
+      )
+    }
   ];
 
-  // Table row selection config
-  const rowSelection = {
-    selectedRowKeys,
-    onChange: (keys) => setSelectedRowKeys(keys),
+  const expandedRowRender = (record) => {
+    const editions = record.availableEditions.map(edition => ({
+      ...edition, 
+      nftId: record._id
+    }));
+    
+    return (
+      <Card title="在售版本" size="small" bordered={false}>
+        <Table
+          columns={editionsColumns}
+          dataSource={editions}
+          rowKey="sub_id"
+          pagination={false}
+          size="small"
+        />
+      </Card>
+    );
   };
 
   return (
     <div>
       <div className="page-header">
-        <h2>NFT管理</h2>
-        <Space>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/nfts/create')}
-          >
-            创建NFT
-          </Button>
-          
-          <Button 
-            type="default"
-            style={{ background: '#52c41a', color: 'white' }}
-            icon={<ShoppingOutlined />}
-            onClick={handleBatchPublish}
-            disabled={selectedRowKeys.length === 0}
-          >
-            批量发布
-          </Button>
-        </Space>
+        <h2>NFT市场管理</h2>
+        <Button 
+          type="primary" 
+          icon={<ShoppingOutlined />}
+          onClick={() => navigate('/nfts')}
+        >
+          管理NFT
+        </Button>
       </div>
       
       <Card className="card-container">
@@ -331,11 +314,14 @@ const NFTList = () => {
       </Card>
       
       <Table
-        rowSelection={rowSelection}
         columns={columns}
         dataSource={nfts}
         rowKey="_id"
         loading={loading}
+        expandable={{
+          expandedRowRender,
+          rowExpandable: record => record.availableEditions && record.availableEditions.length > 0,
+        }}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 1100 }}
       />
@@ -385,41 +371,8 @@ const NFTList = () => {
           </Form.Item>
         </Form>
       </Modal>
-
-      {/* Batch Publish Modal */}
-      <Modal
-        title="批量发布NFT"
-        open={batchPublishModal}
-        onOk={submitBatchPublish}
-        onCancel={() => {
-          setBatchPublishModal(false);
-          publishForm.resetFields();
-        }}
-        okText="确认"
-        cancelText="取消"
-      >
-        <p>您已选择 {selectedRowKeys.length} 个NFT进行批量发布</p>
-        <Form
-          form={publishForm}
-          layout="vertical"
-        >
-          <Form.Item
-            name="price"
-            label="发布价格(可选)"
-            extra="留空则使用每个NFT的原始价格"
-          >
-            <InputNumber 
-              style={{ width: '100%' }} 
-              placeholder="输入统一发布价格" 
-              min={0}
-              precision={2}
-              addonAfter="元" 
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };
 
-export default NFTList; 
+export default NFTMarketplace;

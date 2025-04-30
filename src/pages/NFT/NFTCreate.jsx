@@ -41,7 +41,7 @@ const NFTCreate = () => {
         editions.push({
           sub_id,
           price: values.price,
-          status: 1, // Default: not for sale
+          status: values.status || 1, // 使用选择的状态或默认为未寄售
         });
       }
 
@@ -54,7 +54,8 @@ const NFTCreate = () => {
         author: values.author,
         quantity: values.quantity,
         category: values.category,
-        editions
+        // editions,
+        status: values.status || 1,
       };
 
       // Submit to API
@@ -72,7 +73,7 @@ const NFTCreate = () => {
   // Configuration for image upload
   const uploadProps = {
     name: 'file',
-    action: `${api.defaults.baseURL}/upload`,
+    action: `${api.defaults.baseURL}/upload/image`,
     headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`,
     },
@@ -177,6 +178,24 @@ const NFTCreate = () => {
           >
             <InputNumber min={1} style={{ width: '100%' }} placeholder="输入NFT数量" />
           </Form.Item>
+
+          <Form.Item
+            name="status"
+            label="状态"
+            rules={[{ required: true, message: '请选择状态' }]}
+            initialValue={1}
+          >
+            <Select placeholder="选择NFT状态">
+              <Option value={1}>未发布</Option>
+              <Option value={2}>已发布</Option>
+              <Option value={3}>已售罄</Option>
+              <Option value={4}>已下架</Option>
+              <Option value={5}>限时发售</Option>
+              <Option value={6}>预售</Option>
+              <Option value={7}>热卖中</Option>
+              <Option value={7}>即将售罄</Option>
+            </Select>
+          </Form.Item>
           
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>
@@ -189,4 +208,4 @@ const NFTCreate = () => {
   );
 };
 
-export default NFTCreate; 
+export default NFTCreate;

@@ -9,6 +9,8 @@ import NFTCreate from './pages/NFT/NFTCreate.jsx';
 import NFTEdit from './pages/NFT/NFTEdit.jsx';
 import CommentList from './pages/Comments/CommentList.jsx';
 import NotFound from './pages/NotFound.jsx';
+import NFTMarketplace from './pages/NFT/NFTMarketplace.jsx';
+
 import './App.css';
 
 // Authentication guard
@@ -39,6 +41,7 @@ function App() {
           <Route path="nfts/edit/:id" element={<NFTEdit />} />
           <Route path="comments" element={<CommentList />} />
           <Route path="*" element={<NotFound />} />
+          <Route path="nfts/marketplace" element={<NFTMarketplace />} />
         </Route>
       </Routes>
     </ConfigProvider>

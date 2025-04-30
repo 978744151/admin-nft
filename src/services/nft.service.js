@@ -55,7 +55,28 @@ const NFTService = {
 
   // Get available NFTs for purchase
   getAvailableNFTs: async () => {
-    const response = await api.get('/nfts/available');
+    const response = await api.get('/nfts/available-list');
+    return response.data;
+  },
+
+    // Publish NFT to marketplace for users to purchase (sets all editions to status 2 - on sale)
+  publishNFT: async (id,data) => {
+    const response = await api.post(`/nfts/${id}/publish`,data);
+    return response.data;
+  },
+
+  // Batch publish multiple NFTs to marketplace
+  publishNFTBatch: async (nftIds, price) => {
+    const response = await api.post('/nfts/publish-batch', {
+      nftIds,
+      price
+    });
+    return response.data;
+  },
+
+  // Publish synthetic airdrop for NFT
+  publishSyntheticAirdrop: async (id, airdropData) => {
+    const response = await api.post(`/nfts/${id}/synthetic-airdrop`, airdropData);
     return response.data;
   }
 };

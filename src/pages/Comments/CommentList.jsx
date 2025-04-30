@@ -22,7 +22,8 @@ const CommentList = () => {
       try {
         // Fetch blogs
         const blogResponse = await api.get('/blogs');
-        setBlogs(blogResponse.data.data || []);
+        console.log(blogResponse.data.data.data); // Debugging printout for blog informatio  
+        setBlogs(blogResponse.data.data.data || []);
         
         // If a blog is selected, fetch its comments
         if (selectedBlog) {
