@@ -29,12 +29,15 @@ const NFTEdit = () => {
         
         // Set form values
         form.setFieldsValue({
+          ...nftResponse.data,
           name: nftResponse.data.name,
           description: nftResponse.data.description,
           imageUrl: nftResponse.data.imageUrl,
           price: nftResponse.data.price,
           author: nftResponse.data.author,
           category: nftResponse.data.category._id,
+          type: nftResponse.data.type,
+          status: nftResponse.data.status,
         });
 
         // Fetch categories
@@ -65,6 +68,7 @@ const NFTEdit = () => {
         author: values.author,
         category: values.category,
         status: values.status,
+        type: values.type,
       };
 
       // Update NFT
@@ -166,6 +170,7 @@ const NFTEdit = () => {
       dataIndex: 'price',
       key: 'price',
     },
+    
     {
       title: '状态',
       key: 'status',
@@ -307,6 +312,19 @@ const NFTEdit = () => {
           >
             <Input placeholder="输入作者名称" />
           </Form.Item>
+          
+          <Form.Item
+            name="type"
+            label="类型"
+            rules={[{ required: true, message: '请选择NFT类型' }]}
+            initialValue={1}
+          >
+            <Select placeholder="选择NFT类型">
+              <Option value={1}>普通NFT</Option>
+              <Option value={2}>盲盒</Option>
+            </Select>
+          </Form.Item>
+
           <Form.Item
             name="status"
             label="状态"

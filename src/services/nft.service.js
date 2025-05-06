@@ -1,9 +1,12 @@
 import api from './api';
 
 const NFTService = {
-  // Get all NFTs with optional category filter
-  getNFTs: async (category) => {
-    const params = category ? { category } : {};
+  // Get all NFTs with optional category and type filter
+  getNFTs: async (category, type) => {
+    console.log(category, type);
+    const params = {};
+    if (category) params.category = category;
+    if (type) params.type = type;
     const response = await api.get('/nfts', { params });
     return response.data;
   },
@@ -59,9 +62,9 @@ const NFTService = {
     return response.data;
   },
 
-    // Publish NFT to marketplace for users to purchase (sets all editions to status 2 - on sale)
-  publishNFT: async (id,data) => {
-    const response = await api.post(`/nfts/${id}/publish`,data);
+  // Publish NFT to marketplace for users to purchase (sets all editions to status 2 - on sale)
+  publishNFT: async (id, data) => {
+    const response = await api.post(`/nfts/${id}/publish`, data);
     return response.data;
   },
 
@@ -81,4 +84,4 @@ const NFTService = {
   }
 };
 
-export default NFTService; 
+export default NFTService;

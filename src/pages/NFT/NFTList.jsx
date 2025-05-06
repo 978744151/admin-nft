@@ -19,6 +19,8 @@ const NFTList = () => {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [batchPublishModal, setBatchPublishModal] = useState(false);
   const [publishForm] = Form.useForm();
+  const [selectedType, setSelectType] = useState('');
+
   const navigate = useNavigate();
 
   // Fetch NFTs and categories
@@ -31,7 +33,7 @@ const NFTList = () => {
         setCategories(categoryResponse.data.data || []);
 
         // Fetch NFTs with category filter if selected
-        const nftResponse = await NFTService.getNFTs(selectedCategory);
+        const nftResponse = await NFTService.getNFTs(selectedCategory,selectedType);
         setNfts(nftResponse.data?.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -42,11 +44,15 @@ const NFTList = () => {
     };
 
     fetchData();
-  }, [selectedCategory]);
+  }, [selectedCategory,selectedType]);
 
   // Handle category filter change
   const handleCategoryChange = (value) => {
     setSelectedCategory(value);
+  };
+  // Handle category filter change
+  const handleTypeChange = (value) => {
+    
   };
 
   const handlePublish = (id) => {
@@ -136,7 +142,7 @@ const NFTList = () => {
       airdropForm.resetFields();
       
       // 刷新列表
-      const response = await NFTService.getNFTs(selectedCategory);
+      const response = await NFTService.getNFTs(selectedCategory, selectedType);
       setNfts(response.data?.data || []);
     } catch (error) {
       if (error.errorFields) {
@@ -167,7 +173,7 @@ const NFTList = () => {
       setSelectedRowKeys([]);
       
       // 刷新列表
-      const response = await NFTService.getNFTs(selectedCategory);
+      const response = await NFTService.getNFTs(selectedCategory, selectedType);
       setNfts(response.data?.data || []);
     } catch (error) {
       if (error.errorFields) {
@@ -203,6 +209,11 @@ const NFTList = () => {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
+    },
+    {
+      title: '类型',
+      dataIndex: 'typeStr',
+      key: 'typeStr',
     },
     {
       title: '价格',
@@ -327,6 +338,18 @@ const NFTList = () => {
               </Option>
             ))}
           </Select>
+          
+          <span>类型筛选:</span>
+          <Select
+            style={{ width: 200 }}
+            placeholder="按类型筛选"
+            allowClear
+            onChange={value => setSelectType(value)}
+            value={selectedType}
+          >
+            <Option value="1">普通NFT</Option>
+            <Option value="2">盲盒</Option>
+          </Select>
         </Space>
       </Card>
       
@@ -422,4 +445,4 @@ const NFTList = () => {
   );
 };
 
-export default NFTList; 
+export default NFTList;

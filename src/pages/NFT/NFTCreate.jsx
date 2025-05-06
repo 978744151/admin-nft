@@ -56,6 +56,7 @@ const NFTCreate = () => {
         category: values.category,
         // editions,
         status: values.status || 1,
+        type: values.type || 1,
       };
 
       // Submit to API
@@ -180,6 +181,18 @@ const NFTCreate = () => {
           </Form.Item>
 
           <Form.Item
+            name="type"
+            label="类型"
+            rules={[{ required: true, message: '请选择NFT类型' }]}
+            initialValue={1}
+          >
+            <Select placeholder="选择NFT类型">
+              <Option value={1}>普通NFT</Option>
+              <Option value={2}>盲盒</Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
             name="status"
             label="状态"
             rules={[{ required: true, message: '请选择状态' }]}
@@ -193,7 +206,7 @@ const NFTCreate = () => {
               <Option value={5}>限时发售</Option>
               <Option value={6}>预售</Option>
               <Option value={7}>热卖中</Option>
-              <Option value={7}>即将售罄</Option>
+              <Option value={8}>即将售罄</Option>
             </Select>
           </Form.Item>
           

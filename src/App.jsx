@@ -10,6 +10,9 @@ import NFTEdit from './pages/NFT/NFTEdit.jsx';
 import CommentList from './pages/Comments/CommentList.jsx';
 import NotFound from './pages/NotFound.jsx';
 import NFTMarketplace from './pages/NFT/NFTMarketplace.jsx';
+import MysteryBoxList from './pages/MysteryBox/MysteryBoxList.jsx';
+import MysteryBoxCreate from './pages/MysteryBox/MysteryBoxCreate.jsx';
+import MysteryBoxEdit from './pages/MysteryBox/MysteryBoxEdit.jsx';
 
 import './App.css';
 
@@ -39,6 +42,9 @@ function App() {
           <Route path="nfts" element={<NFTList />} />
           <Route path="nfts/create" element={<NFTCreate />} />
           <Route path="nfts/edit/:id" element={<NFTEdit />} />
+          <Route path="mystery-boxes" element={<MysteryBoxList />} />
+          <Route path="mystery-boxes/create" element={<MysteryBoxCreate />} />
+          <Route path="mystery-boxes/edit/:id" element={<MysteryBoxEdit />} />
           <Route path="comments" element={<CommentList />} />
           <Route path="*" element={<NotFound />} />
           <Route path="nfts/marketplace" element={<NFTMarketplace />} />
@@ -48,4 +54,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

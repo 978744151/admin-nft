@@ -9,6 +9,7 @@ import {
   CommentOutlined,
   UserOutlined,
   LogoutOutlined,
+  GiftOutlined,
 } from '@ant-design/icons';
 import AuthService from '../services/auth.service.js';
 
@@ -52,6 +53,12 @@ const AdminLayout = () => {
       icon: <ShopOutlined />,
       label: 'NFT管理',
       onClick: () => navigate('/nfts'),
+    },
+    {
+      key: '/mystery-boxes',
+      icon: <GiftOutlined />,
+      label: '盲盒管理',
+      onClick: () => navigate('/mystery-boxes'),
     },
     {
       key: '/comments',
@@ -116,4 +123,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout; 
+export default AdminLayout;
