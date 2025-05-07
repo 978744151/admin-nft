@@ -25,6 +25,18 @@ const MysteryBoxService = {
         return response.data;
     },
 
+    // 更新盲盒状态
+    updateMysteryBoxStatus: async (id, status) => {
+        const response = await api.put(`/mystery-boxes/${id}/status`, { status });
+        return response.data;
+    },
+
+    // 更新盲盒实例状态
+    updateMysteryBoxEdition: async (mysteryBoxId, editionId, editionData) => {
+        const response = await api.put(`/mystery-boxes/${mysteryBoxId}/editions/${editionId}`, editionData);
+        return response.data;
+    },
+
     // 删除盲盒
     deleteMysteryBox: async (id) => {
         const response = await api.delete(`/mystery-boxes/${id}`);

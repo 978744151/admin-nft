@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, message, InputNumber, Upload, Card, Select, Space, Divider, Typography } from 'antd';
+import { Form, Input, Button, message, InputNumber, Upload, Card, Select, Space, Divider, Typography, Table, Tag } from 'antd';
 import { UploadOutlined, ArrowLeftOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import MysteryBoxService from '../../services/mysteryBox.service.js';
@@ -44,6 +44,7 @@ const MysteryBoxEdit = () => {
         
         // 设置表单初始值
         form.setFieldsValue({
+          ...response.data,
           name: mysteryBox.name,
           description: mysteryBox.description,
           imageUrl: mysteryBox.imageUrl,
@@ -118,6 +119,104 @@ const MysteryBoxEdit = () => {
       }
     },
   };
+
+  // 处理盲盒实例状态变更
+  const handleEditionStatusChange = async (editionId, newStatus) => {
+    setLoading(true);
+    try {
+      const mysteryBox = form.getFieldValue('editions');
+      const editionIndex = mysteryBox.findIndex(edition => edition.sub_id === editionId);
+      
+      if (editionIndex === -1) {
+        throw new Error('找不到对应的盲盒实例');
+      }
+      
+      // 更新本地状态
+      mysteryBox[editionIndex].status = newStatus;
+      
+      // 根据状态设置状态描述
+      const statusMap = {
+        1: '未寄售',
+        2: '寄售中',
+        3: '锁定中',
+        4: '已售出',
+        5: '已发布',
+        6: '空投',
+        7: '合成',
+      };
+      
+      mysteryBox[editionIndex].statusStr = statusMap[newStatus] || '未知状态';
+      
+      // 提交到API
+      await MysteryBoxService.updateMysteryBoxEdition(id, editionId, { status: newStatus });
+      
+      // 更新表单数据
+      form.setFieldsValue({ editions: mysteryBox });
+      
+      message.success('盲盒实例状态更新成功');
+    } catch (error) {
+      console.error('Error updating edition status:', error);
+      message.error('更新盲盒实例状态失败: ' + (error.message || '未知错误'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 更新盲盒实例表格定义
+  const editionsColumns = [
+    {
+      title: '编号',
+      dataIndex: 'sub_id',
+      key: 'sub_id',
+    },
+    {
+      title: '状态',
+      key: 'status',
+      render: (_, record) => {
+        const statusMap = {
+          1: { color: 'green', text: '未寄售' },
+          2: { color: 'blue', text: '寄售中' },
+          3: { color: 'orange', text: '锁定中' },
+          4: { color: 'red', text: '已售出' },
+          5: { color: 'cyan', text: '已发布' },
+          6: { color: 'purple', text: '空投' },
+          7: { color: 'magenta', text: '合成' }
+        };
+        const { color, text } = statusMap[record.status] || { color: 'default', text: '未知状态' };
+        return <Tag color={color}>{text}</Tag>;
+      },
+    },
+    {
+      title: '拥有者',
+      key: 'owner',
+      ellipsis: true,
+      render: (_, record) => <span>{record.owner}</span>,
+    },
+    {
+      title: '价格',
+      dataIndex: 'price',
+      key: 'price',
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_, record) => (
+        <Select
+          value={record.status}
+          style={{ width: 120 }}
+          onChange={(value) => handleEditionStatusChange(record.sub_id, value)}
+        >
+          <Option value={1}>未寄售</Option>
+          <Option value={2}>寄售中</Option>
+          <Option value={3}>锁定中</Option>
+          <Option value={4}>已售出</Option>
+          <Option value={5}>已发布</Option>
+          <Option value={6}>空投</Option>
+          <Option value={7}>合成</Option>
+        </Select>
+      ),
+    },
+  ];
 
   if (initialLoading) {
     return <div>加载中...</div>;
@@ -219,6 +318,10 @@ const MysteryBoxEdit = () => {
               <Option value={2}>已发布</Option>
               <Option value={3}>已售罄</Option>
               <Option value={4}>已下架</Option>
+              <Option value={5}>限时发售</Option>
+              <Option value={6}>预售</Option>
+              <Option value={7}>热卖中</Option>
+              <Option value={8}>即将售罄</Option>
             </Select>
           </Form.Item>
           
@@ -244,7 +347,7 @@ const MysteryBoxEdit = () => {
                           optionFilterProp="children"
                           style={{ width: 300 }}
                         >
-                          {nfts.map(nft => (
+                          {nfts.length > 0 && nfts.map(nft => (
                             <Option key={nft._id} value={nft._id}>
                               {nft.name}
                             </Option>
@@ -304,6 +407,15 @@ const MysteryBoxEdit = () => {
               </>
             )}
           </Form.List>
+          
+          <Divider />
+          <Title level={4}>盲盒实例信息</Title>
+          <Table
+            columns={editionsColumns}
+            rowKey="sub_id"
+            dataSource={form.getFieldValue('editions') || []}
+            pagination={{ pageSize: 10 }}
+          />
           
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading}>

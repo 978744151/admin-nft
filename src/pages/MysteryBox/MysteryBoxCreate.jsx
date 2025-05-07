@@ -43,19 +43,23 @@ const MysteryBoxCreate = () => {
         description: values.description,
         imageUrl: values.imageUrl,
         price: parseFloat(values.price),
-        totalQuantity: values.totalQuantity,
+        totalQuantity: values.totalQuantity, // 这个数量会用于创建对应数量的盲盒实例
         openLimit: values.openLimit || 0,
         status: values.status,
         items: values.items?.map(item => ({
           nft: item.nft,
           weight: item.weight,
-          quantity: item.quantity
+          quantity: item.quantity, // 这个数量表示该NFT在盲盒中的数量
+          remainingQuantity: item.quantity
         })) || []
       };
 
       // 提交到API
-      await MysteryBoxService.createMysteryBox(mysteryBoxData);
-      message.success('盲盒创建成功');
+      const response = await MysteryBoxService.createMysteryBox(mysteryBoxData);
+      
+      // 显示创建成功消息，包含创建的盲盒实例数量
+      const totalEditions = response.data.editions?.length || 0;
+      message.success(`盲盒创建成功，共创建${totalEditions}个盲盒实例`);
       navigate('/mystery-boxes');
     } catch (error) {
       console.error('Error creating mystery box:', error);
@@ -172,6 +176,10 @@ const MysteryBoxCreate = () => {
               <Option value={1}>未发布</Option>
               <Option value={2}>已发布</Option>
               <Option value={4}>已下架</Option>
+              <Option value={5}>限时发售</Option>
+              <Option value={6}>预售</Option>
+              <Option value={7}>热卖中</Option>
+              <Option value={8}>即将售罄</Option>
             </Select>
           </Form.Item>
           
@@ -221,10 +229,10 @@ const MysteryBoxCreate = () => {
                       <Form.Item
                         {...restField}
                         name={[name, 'quantity']}
-                        label="数量"
-                        rules={[{ required: true, message: '请输入数量' }]}
+                        label="实例数量"
+                        rules={[{ required: true, message: '请输入实例数量' }]}
                       >
-                        <InputNumber min={1} placeholder="数量" />
+                        <InputNumber min={1} placeholder="实例数量" />
                       </Form.Item>
                     </Space>
 

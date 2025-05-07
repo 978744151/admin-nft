@@ -313,7 +313,7 @@ const NFTEdit = () => {
             <Input placeholder="输入作者名称" />
           </Form.Item>
           
-          <Form.Item
+          {/* <Form.Item
             name="type"
             label="类型"
             rules={[{ required: true, message: '请选择NFT类型' }]}
@@ -323,7 +323,7 @@ const NFTEdit = () => {
               <Option value={1}>普通NFT</Option>
               <Option value={2}>盲盒</Option>
             </Select>
-          </Form.Item>
+          </Form.Item> */}
 
           <Form.Item
             name="status"
